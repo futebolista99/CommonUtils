@@ -16,7 +16,7 @@ Example of fetching a secret stored in Bitwarden:
 from acme_utils.bitwarden import get_secret_from_bitwarden
 
 # Ensure the BWS_ACCESS_TOKEN environment variable is set
-secret = get_secret_from_bitwarden("my/secret/name")
+secret = get_secret_from_bitwarden("my/secret/key")
 print(secret)
 ```
 
