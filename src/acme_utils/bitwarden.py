@@ -15,3 +15,4 @@ def get_secret_from_bitwarden(secret_name: str) -> str:
     )
     secret_json = json.loads(result.stdout)
     return secret_json["value"]
+
