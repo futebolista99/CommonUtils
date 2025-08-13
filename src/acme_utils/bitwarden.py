@@ -13,14 +13,14 @@ if shutil.which("bws") is None:
     )
 
 # ===== シークレット情報の取得 =====
-def get_secret_from_bitwarden(secret_name: str) -> str:
-    """Bitwarden CLI を使って秘密を取得する"""
+def get_secret_from_bitwarden(secret_key: str) -> str:
+    """Retrieve a secret's value from Bitwarden by key using ``bws secret list``."""
     access_token = os.getenv("BWS_ACCESS_TOKEN")
     if access_token is None:
         raise RuntimeError("BWS_ACCESS_TOKEN environment variable is not set.")
     try:
         result = subprocess.run(
-            ["bws", "secret", "get", secret_name, "--access-token", access_token],
+            ["bws", "secret", "list", "--access-token", access_token],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -28,20 +28,16 @@ def get_secret_from_bitwarden(secret_name: str) -> str:
         )
     except subprocess.CalledProcessError as exc:
         logger.error("Bitwarden CLI failed: %s", exc.stderr.strip() if exc.stderr else exc)
-        raise RuntimeError(
-            f"Failed to retrieve secret '{secret_name}' from Bitwarden"
-        ) from exc
+        raise RuntimeError("Failed to list secrets from Bitwarden") from exc
 
     try:
-        secret_json = json.loads(result.stdout)
+        secrets_json = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        logger.error(
-            "Invalid JSON output for secret '%s': %s",
-            secret_name,
-            exc.msg,
-        )
-        raise RuntimeError(
-            f"Bitwarden returned invalid JSON for secret '{secret_name}'"
-        ) from exc
-    return secret_json["value"]
+        logger.error("Invalid JSON output while listing secrets: %s", exc.msg)
+        raise RuntimeError("Bitwarden returned invalid JSON while listing secrets") from exc
 
+    for entry in secrets_json:
+        if entry.get("key") == secret_key:
+            return entry.get("value")
+
+    raise RuntimeError(f"Secret with key '{secret_key}' not found in Bitwarden")
