@@ -2,8 +2,15 @@ import subprocess
 import os
 import json
 import logging
+import shutil
 
 logger = logging.getLogger(__name__)
+
+if shutil.which("bws") is None:
+    raise RuntimeError(
+        "The 'bws' CLI is required but was not found. Please install the Bitwarden"
+        " Secrets Manager CLI and ensure it is available in your PATH."
+    )
 
 # ===== シークレット情報の取得 =====
 def get_secret_from_bitwarden(secret_name: str) -> str:
