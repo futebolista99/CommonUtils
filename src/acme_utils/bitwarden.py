@@ -5,7 +5,9 @@ import json
 # ===== シークレット情報の取得 =====
 def get_secret_from_bitwarden(secret_name: str) -> str:
     """Bitwarden CLI を使って秘密を取得する"""
-    access_token = os.environ["BWS_ACCESS_TOKEN"]
+    access_token = os.getenv("BWS_ACCESS_TOKEN")
+    if access_token is None:
+        raise RuntimeError("BWS_ACCESS_TOKEN environment variable is not set.")
     result = subprocess.run(
         ["bws", "secret", "get", secret_name, "--access-token", access_token],
         capture_output=True,
