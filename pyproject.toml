@@ -7,3 +7,7 @@ name = "acme_utils"
 version = "0.1.0"
 description = "Personal utilities (Bitwarden, etc.)"
 requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["acme_utils"]
+package-dir = {"" = "src"}
