@@ -20,6 +20,12 @@ secret = get_secret_from_bitwarden("my/secret/key")
 print(secret)
 ```
 
+To check the installed version:
+```python
+from acme_utils import __version__
+print(__version__)
+```
+
 ## Development Guidelines
 - Requires Python 3.10 or newer.
 - Keep code formatted and linted.
