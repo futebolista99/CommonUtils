@@ -29,14 +29,14 @@ jobs:
         run: python -m build
 
       - name: Import GPG key
-        if: secrets.GPG_PRIVATE_KEY != ''
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Sign artifacts
-        if: secrets.GPG_PRIVATE_KEY != ''
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
         run: |
           for dist in dist/*; do
             gpg --batch --yes --detach-sign --armor "$dist"
