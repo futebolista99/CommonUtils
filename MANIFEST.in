@@ -1,1 +1,3 @@
-include LICENSE
+include LICENSE README.md
+
+# Include additional non-Python files as needed
