@@ -1,7 +1,7 @@
-# AcmeUtils
+# CommonUtils
 
 ## Project Purpose
-AcmeUtils provides small personal utilities, such as retrieving secrets from Bitwarden, to simplify common development tasks.
+CommonUtils provides small personal utilities, such as retrieving secrets from Bitwarden, to simplify common development tasks.
 
 ## Installation
 1. Clone this repository.
@@ -13,7 +13,7 @@ AcmeUtils provides small personal utilities, such as retrieving secrets from Bit
 ## Usage
 Example of fetching a secret stored in Bitwarden:
 ```python
-from acme_utils.bitwarden import get_secret_from_bitwarden
+from common_utils.bitwarden import get_secret_from_bitwarden
 
 # Ensure the BWS_ACCESS_TOKEN environment variable is set
 secret = get_secret_from_bitwarden("my/secret/key")
@@ -22,7 +22,7 @@ print(secret)
 
 To check the installed version:
 ```python
-from acme_utils import __version__
+from common_utils import __version__
 print(__version__)
 ```
 
