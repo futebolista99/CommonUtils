@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_call:
+    inputs:
+      python-version:
+        description: 'Python version to use'
+        required: false
+        default: '3.x'
+        type: string
 
 jobs:
   release:
@@ -22,7 +29,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: ${{ github.event.inputs.python-version || '3.x' }}
 
       - name: Install dependencies
         run: |
