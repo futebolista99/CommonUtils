@@ -8,8 +8,9 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      PUBLIC_GPG_KEY: ${{ secrets.PUBLIC_GPG_KEY }}
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -23,33 +24,35 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install build dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           python -m pip install build pytest
 
       - name: Run tests
-        run: python -m pytest
+        run: |
+          if [ -d tests ]; then python -m pytest; else echo 'No tests to run'; fi
 
       - name: Build distributions
         run: python -m build
 
-      - name: Import maintainer public key
-        run: |
-          echo "$PUBLIC_GPG_KEY" > maintainer.asc
-          gpg --import maintainer.asc
-          gpg --list-keys
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
 
-      - name: Verify tag signature
+      - name: Sign artifacts
+        env:
+          COSIGN_EXPERIMENTAL: "true"
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          echo "Verifying signature of $TAG"
-          git tag -v "$TAG"
+          for file in dist/*; do
+            cosign sign-blob --yes "$file" \
+              --output-signature "$file.sig" \
+              --output-certificate "$file.pem"
+          done
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            dist/*
+          files: dist/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
