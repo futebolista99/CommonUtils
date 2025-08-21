@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_call:
     inputs:
       python-version:
@@ -11,6 +8,9 @@ on:
         required: false
         default: '3.x'
         type: string
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   release:
