@@ -84,7 +84,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows-exe:
-    if: ${{ github.event.inputs.windows-entry-script != null && github.event.inputs.windows-entry-script != '' }}
     runs-on: windows-latest
     permissions:
       contents: write
@@ -108,6 +107,32 @@ jobs:
         with:
           python-version: ${{ github.event.inputs.python-version || '3.x' }}
 
+      - name: Determine entry script
+        run: |
+          script="${{ env.WINDOWS_ENTRY_SCRIPT }}"
+          if [ -z "$script" ] && [ -f pyproject.toml ]; then
+            script=$(python - <<'PY'
+from pathlib import Path
+try:
+    import tomllib
+except Exception:
+    tomllib = None
+try:
+    if tomllib:
+        data = tomllib.loads(Path('pyproject.toml').read_text())
+        scripts = data.get('project', {}).get('scripts', {})
+        if scripts:
+            print(next(iter(scripts.values())))
+except Exception:
+    pass
+PY
+)
+          fi
+          if [ -z "$script" ]; then
+            script=$(rg -l "__main__" -g "*.py" | head -n 1 || true)
+          fi
+          echo "WINDOWS_ENTRY_SCRIPT=$script" >> $GITHUB_ENV
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -124,10 +149,10 @@ jobs:
 
       - name: Build executable
         run: |
-          if [ -f "$WINDOWS_ENTRY_SCRIPT" ]; then
+          if [ -n "$WINDOWS_ENTRY_SCRIPT" ] && [ -f "$WINDOWS_ENTRY_SCRIPT" ]; then
             pyinstaller --onefile -n "$WINDOWS_EXE_NAME" "$WINDOWS_ENTRY_SCRIPT"
           else
-            echo "No entry script found at $WINDOWS_ENTRY_SCRIPT; skipping Windows executable build"
+            echo "No entry script found; skipping Windows executable build"
           fi
 
       - name: Install cosign
