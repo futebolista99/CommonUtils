@@ -39,7 +39,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ github.event.inputs.python-version || '3.x' }}
+          python-version: ${{ inputs.python-version || '3.x' }}
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v1
@@ -84,7 +84,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows-exe:
-    if: ${{ github.event.inputs.windows-entry-script != null && github.event.inputs.windows-entry-script != '' }}
+    if: ${{ inputs.windows-entry-script != null && inputs.windows-entry-script != '' }}
     runs-on: windows-latest
     permissions:
       contents: write
@@ -93,8 +93,8 @@ jobs:
       run:
         shell: bash
     env:
-      WINDOWS_ENTRY_SCRIPT: ${{ github.event.inputs.windows-entry-script }}
-      WINDOWS_EXE_NAME: ${{ github.event.inputs.windows-exe-name || 'common_utils' }}
+      WINDOWS_ENTRY_SCRIPT: ${{ inputs.windows-entry-script }}
+      WINDOWS_EXE_NAME: ${{ inputs.windows-exe-name || 'common_utils' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -106,7 +106,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ github.event.inputs.python-version || '3.x' }}
+          python-version: ${{ inputs.python-version || '3.x' }}
 
       - name: Install dependencies
         run: |
