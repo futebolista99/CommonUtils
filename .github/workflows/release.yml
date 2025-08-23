@@ -84,7 +84,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows-exe:
-    if: ${{ github.event_name == 'push' || github.event.inputs.windows-entry-script != '' }}
+    if: ${{ github.event.inputs.windows-entry-script != null && github.event.inputs.windows-entry-script != '' }}
     runs-on: windows-latest
     permissions:
       contents: write
@@ -93,7 +93,7 @@ jobs:
       run:
         shell: bash
     env:
-      WINDOWS_ENTRY_SCRIPT: ${{ github.event_name == 'push' && 'src/common_utils/bitwarden.py' || github.event.inputs.windows-entry-script }}
+      WINDOWS_ENTRY_SCRIPT: ${{ github.event.inputs.windows-entry-script }}
       WINDOWS_EXE_NAME: ${{ github.event.inputs.windows-exe-name || 'common_utils' }}
     steps:
       - name: Check out repository
