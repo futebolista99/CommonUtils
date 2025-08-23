@@ -112,21 +112,21 @@ jobs:
           script="${{ env.WINDOWS_ENTRY_SCRIPT }}"
           if [ -z "$script" ] && [ -f pyproject.toml ]; then
             script=$(python - <<'PY'
-from pathlib import Path
-try:
-    import tomllib
-except Exception:
-    tomllib = None
-try:
-    if tomllib:
-        data = tomllib.loads(Path('pyproject.toml').read_text())
-        scripts = data.get('project', {}).get('scripts', {})
-        if scripts:
-            print(next(iter(scripts.values())))
-except Exception:
-    pass
-PY
-)
+            from pathlib import Path
+            try:
+                import tomllib
+            except Exception:
+                tomllib = None
+            try:
+                if tomllib:
+                    data = tomllib.loads(Path('pyproject.toml').read_text())
+                    scripts = data.get('project', {}).get('scripts', {})
+                    if scripts:
+                        print(next(iter(scripts.values())))
+            except Exception:
+                pass
+            PY
+            )
           fi
           if [ -z "$script" ]; then
             script=$(rg -l "__main__" -g "*.py" | head -n 1 || true)
