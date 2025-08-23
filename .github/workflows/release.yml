@@ -84,7 +84,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows-exe:
-    if: ${{ github.event_name == 'push' || github.event.inputs.windows-entry-script != '' }}
     runs-on: windows-latest
     permissions:
       contents: write
@@ -93,7 +92,7 @@ jobs:
       run:
         shell: bash
     env:
-      WINDOWS_ENTRY_SCRIPT: ${{ github.event_name == 'push' && 'src/common_utils/bitwarden.py' || github.event.inputs.windows-entry-script }}
+      WINDOWS_ENTRY_SCRIPT: ${{ github.event.inputs.windows-entry-script || '' }}
       WINDOWS_EXE_NAME: ${{ github.event.inputs.windows-exe-name || 'common_utils' }}
     steps:
       - name: Check out repository
@@ -111,7 +110,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller pytest
+          pip install pyinstaller pytest tomli
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           elif [ -f pyproject.toml ]; then
@@ -122,13 +121,20 @@ jobs:
         run: |
           if [ -d tests ]; then pytest; else echo 'No tests to run'; fi
 
-      - name: Build executable
+      - name: Detect entry script
         run: |
-          if [ -f "$WINDOWS_ENTRY_SCRIPT" ]; then
-            pyinstaller --onefile -n "$WINDOWS_EXE_NAME" "$WINDOWS_ENTRY_SCRIPT"
-          else
-            echo "No entry script found at $WINDOWS_ENTRY_SCRIPT; skipping Windows executable build"
+          entry="$WINDOWS_ENTRY_SCRIPT"
+          if [ -z "$entry" ]; then
+            entry=$(python .github/scripts/detect_entry.py)
           fi
+          if [ -z "$entry" ] && [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            entry="src/common_utils/bitwarden.py"
+          fi
+          echo "WINDOWS_ENTRY_SCRIPT=$entry" >> "$GITHUB_ENV"
+
+      - name: Build executable
+        if: env.WINDOWS_ENTRY_SCRIPT != ''
+        run: pyinstaller --onefile -n "$WINDOWS_EXE_NAME" "$WINDOWS_ENTRY_SCRIPT"
 
       - name: Install cosign
         if: ${{ hashFiles(format('dist/{0}.exe', env.WINDOWS_EXE_NAME)) != '' }}
