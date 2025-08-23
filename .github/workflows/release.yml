@@ -72,3 +72,62 @@ jobs:
           files: dist/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  windows-exe:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      id-token: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ github.event.inputs.python-version || '3.x' }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pytest
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          elif [ -f pyproject.toml ]; then
+            pip install -e .
+          fi
+
+      - name: Run tests
+        run: |
+          if [ -d tests ]; then pytest; else echo 'No tests to run'; fi
+
+      - name: Build executable
+        run: pyinstaller --onefile -n common_utils src/common_utils/bitwarden.py
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign executable
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          cosign sign-blob --yes dist/common_utils.exe \
+            --output-signature dist/common_utils.exe.sig \
+            --output-certificate dist/common_utils.exe.pem
+
+      - name: Upload Windows assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/common_utils.exe
+            dist/common_utils.exe.sig
+            dist/common_utils.exe.pem
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
