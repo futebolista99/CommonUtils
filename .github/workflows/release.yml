@@ -8,6 +8,16 @@ on:
         required: false
         default: '3.x'
         type: string
+      windows-entry-script:
+        description: 'Entry script for PyInstaller (Windows build); leave empty to skip'
+        required: false
+        default: ''
+        type: string
+      windows-exe-name:
+        description: 'Name for the Windows executable'
+        required: false
+        default: 'common_utils'
+        type: string
   push:
     tags:
       - 'v*'
@@ -74,6 +84,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows-exe:
+    if: ${{ github.event_name == 'push' || github.event.inputs.windows-entry-script != '' }}
     runs-on: windows-latest
     permissions:
       contents: write
@@ -81,6 +92,9 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      WINDOWS_ENTRY_SCRIPT: ${{ github.event_name == 'push' && 'src/common_utils/bitwarden.py' || github.event.inputs.windows-entry-script }}
+      WINDOWS_EXE_NAME: ${{ github.event.inputs.windows-exe-name || 'common_utils' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -109,25 +123,33 @@ jobs:
           if [ -d tests ]; then pytest; else echo 'No tests to run'; fi
 
       - name: Build executable
-        run: pyinstaller --onefile -n common_utils src/common_utils/bitwarden.py
+        run: |
+          if [ -f "$WINDOWS_ENTRY_SCRIPT" ]; then
+            pyinstaller --onefile -n "$WINDOWS_EXE_NAME" "$WINDOWS_ENTRY_SCRIPT"
+          else
+            echo "No entry script found at $WINDOWS_ENTRY_SCRIPT; skipping Windows executable build"
+          fi
 
       - name: Install cosign
+        if: ${{ hashFiles(format('dist/{0}.exe', env.WINDOWS_EXE_NAME)) != '' }}
         uses: sigstore/cosign-installer@v3
 
       - name: Sign executable
+        if: ${{ hashFiles(format('dist/{0}.exe', env.WINDOWS_EXE_NAME)) != '' }}
         env:
           COSIGN_EXPERIMENTAL: "true"
         run: |
-          cosign sign-blob --yes dist/common_utils.exe \
-            --output-signature dist/common_utils.exe.sig \
-            --output-certificate dist/common_utils.exe.pem
+          cosign sign-blob --yes dist/${{ env.WINDOWS_EXE_NAME }}.exe \
+            --output-signature dist/${{ env.WINDOWS_EXE_NAME }}.exe.sig \
+            --output-certificate dist/${{ env.WINDOWS_EXE_NAME }}.exe.pem
 
       - name: Upload Windows assets
+        if: ${{ hashFiles(format('dist/{0}.exe', env.WINDOWS_EXE_NAME)) != '' }}
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/common_utils.exe
-            dist/common_utils.exe.sig
-            dist/common_utils.exe.pem
+            dist/${{ env.WINDOWS_EXE_NAME }}.exe
+            dist/${{ env.WINDOWS_EXE_NAME }}.exe.sig
+            dist/${{ env.WINDOWS_EXE_NAME }}.exe.pem
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
